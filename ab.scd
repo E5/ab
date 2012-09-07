@@ -10,21 +10,19 @@ q= ();
 
 q.buffers= [
 	Buffer.read(s,
-		"/Volumes/Bombe/\ SC/A-B\ simpler/audio/Two_Face.aif",
-		// Document.current.dir ++ "/audio/Two_Face.aif",
+//		"/Volumes/Bombe/\ SC/A-B\ simpler/audio/Two_Face.aif",
+		Document.current.dir ++ "/audio/Two_Face.aif",
 		action: {"Buffer 2 loaded".postln;}
 	),
 	Buffer.read(s,
-		"/Volumes/Bombe/\ SC/A-B\ simpler/audio/Two_Face_Flt.aif",
-		// Document.current.dir ++ "/audio/Two_Face_Flt.aif",
+//		"/Volumes/Bombe/\ SC/A-B\ simpler/audio/Two_Face_Flt.aif",
+		Document.current.dir ++ "/audio/Two_Face_Flt.aif",
 		action: {"Buffer 1 loaded".postln;}
 	),
-//	Buffer.read(s, Platform.resourceDir +/+ "sounds/a11wlk01.wav"),
-//	Buffer.read(s, Platform.resourceDir +/+ "sounds/a11wlk01-44_1.aiff"),
 ];
 )
 
-s.boot;
+//s.boot;
 
 /**************************************************************************************************/
 (
@@ -42,10 +40,15 @@ w = Window.new("A-B", Rect(520, 241, 400, 400)).front;
 layout= w.addFlowLayout;
 
 ~task= Task({
-	50.do({|i|
-		{~playPosTxt.string_("00:"++i)}.defer;
-		1.wait;
-	});
+	var startTime;
+	startTime= Main.elapsedTime;
+	inf.do{
+		var string;
+		string= (Main.elapsedTime - startTime).asTimeString;
+		string= string[0..10];
+		{~playPosTxt.string_(string)}.defer;
+		0.01.wait
+	};
 });
 
 ~playPoSld= Slider(w, 392@20)
@@ -53,8 +56,8 @@ layout= w.addFlowLayout;
 	});
 
 ~playPosTxt= StaticText(w, 124@40)
-	.string_("00:00")
-	.font_(Font("Monaco", 24))
+	.string_(0.asTimeString[0..10])
+//	.font_(Font("Monaco", 24))
 	.background_(Color.black)
 	.stringColor_(Color.yellow)
 	.align_(\center);
@@ -123,13 +126,23 @@ c.addFlowLayout;
 		.value_(if (i == q.currentFile, {1}, {0}));
 
 	~sndLabel[i]= StaticText(c, 215@40)
-		.string_(" file name: " ++ q.buffers[i].path.basename ++ "\n Peak: 0.0 dB  |  Vol: " ++ q.amp[i].ampdb.round(0.1).asString ++" dB")
+		.string_(" file name: "
+			++ q.buffers[i].path.basename
+			++ "\n Peak: 0.0 dB  |  Vol: "
+			++ q.amp[i].ampdb.round(0.1).asString
+			++" dB"
+		)
 		.background_(Color.white);
 
 	~sndVol= Knob(c, 30@30)
 		.action_({|me|
 			q.amp[i]= me.value;
-			~sndLabel[i].string_(" file name: " ++ q.buffers[i].path.basename ++ "\n Peak: 0.0 dB  |  Vol: " ++ q.amp[i].ampdb.round(0.1).asString ++" dB");
+			~sndLabel[i].string_(" file name: "
+				++ q.buffers[i].path.basename
+				++ "\n Peak: 0.0 dB  |  Vol: "
+				++ q.amp[i].ampdb.round(0.1).asString
+				++" dB"
+			);
 			if (q.playing, {
 				~player[i].set(\amp, q.amp[i] * ~chooseSnd[i].value);
 				});
@@ -160,3 +173,4 @@ q.buffers.do{|i| i.free}
 //~task.resume;
 //~task.reset;
 //~task.stop;
+
