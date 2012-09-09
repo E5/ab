@@ -8,18 +8,19 @@ SynthDef(\ab_PlayBuf, {| out=0, bufnum=0, rate=1, trigger=0, startPos=0, loop=0,
 
 q= ();
 
-q.buffers= [
-	Buffer.read(s,
-//		"/Volumes/Bombe/\ SC/A-B\ simpler/audio/Two_Face.aif",
-		Document.current.dir ++ "/audio/Two_Face.aif",
-		action: {"Buffer 2 loaded".postln;}
-	),
-	Buffer.read(s,
-//		"/Volumes/Bombe/\ SC/A-B\ simpler/audio/Two_Face_Flt.aif",
-		Document.current.dir ++ "/audio/Two_Face_Flt.aif",
-		action: {"Buffer 1 loaded".postln;}
-	),
-];
+q.buffers= [nil, nil];
+//q.buffers= [
+//	Buffer.read(s,
+////		"/Volumes/Bombe/\ SC/A-B\ simpler/audio/Two_Face.aif",
+//		Document.current.dir ++ "/audio/Two_Face.aif",
+//		action: {"Buffer A loaded".postln;}
+//	),
+//	Buffer.read(s,
+////		"/Volumes/Bombe/\ SC/A-B\ simpler/audio/Two_Face_Flt.aif",
+//		Document.current.dir ++ "/audio/Two_Face_Flt.aif",
+//		action: {"Buffer B loaded".postln;}
+//	),
+//];
 )
 
 //s.boot;
@@ -35,7 +36,12 @@ q.amp= [-6, -6].dbamp;
 GUI.qt;
 //GUI.cocoa;
 
-w = Window.new("A-B", Rect(520, 241, 400, 400)).front;
+w = Window.new("A-B", Rect(520, 241, 420, 400)).front;
+w.onClose= {
+	// free buffers
+	q.buffers.do{|i| i.free};
+	q.buffers= [nil, nil];
+};
 
 layout= w.addFlowLayout;
 
@@ -51,7 +57,7 @@ layout= w.addFlowLayout;
 	};
 });
 
-~playPoSld= Slider(w, 392@20)
+~playPoSld= Slider(w, 412@20)
 	.action_({
 	});
 
@@ -62,7 +68,7 @@ layout= w.addFlowLayout;
 	.stringColor_(Color.yellow)
 	.align_(\center);
 
-~play= Button(w, 106@40)
+~play= Button(w, 111@40)
 	.states_([
 		["play", Color.black, Color.white],
 		["stop", Color.black, Color.white],
@@ -89,7 +95,7 @@ layout= w.addFlowLayout;
 	})
 	.value_(0);
 
-~stop= Button(w, 106@40)
+~stop= Button(w, 111@40)
 	.states_([
 		["stop", Color.black, Color.white],
 	])
@@ -98,6 +104,61 @@ layout= w.addFlowLayout;
 	})
 	.value_(0)
 	.enabled_(false);
+
+c= CompositeView(w, 54@40);
+c.addFlowLayout(0@0, 0@0);
+
+~loadSoundfile= [
+	(Button(c, 54@20)
+		.states_([ ["load a", Color.black, Color.white], ])
+		.action_({|me|
+			Dialog.openPanel({|path|
+				Ê Ê path.postln;
+					if (path.isSoundFile, {
+						q.buffers[0]= Buffer.read(s,
+							path,
+							action: {{
+								~sndLabel[0].string_(" file name: "
+										++ q.buffers[0].path.basename
+										++ "\n Peak: 0.0 dB  |  Vol: "
+										++ q.amp[0].ampdb.round(0.1).asString
+										++" dB"
+									);
+								"Buffer A loaded".postln;
+							}.defer});
+						},{
+							SCAlert("Sorry, that doesn't seem to be a soundfile.", ["Ok"])
+						})
+				},{
+				Ê Ê "cancelled".postln;
+				},
+				false
+			)})),
+	(Button(c, 54@20)
+		.states_([ ["load b", Color.black, Color.white], ])
+		.action_({|me|
+			Dialog.openPanel({|path|
+				Ê Ê path.postln;
+					if (path.isSoundFile, {
+						q.buffers[1]= Buffer.read(s,
+							path,
+							action: {
+								{~sndLabel[1].string_(" file name: "
+										++ q.buffers[1].path.basename
+										++ "\n Peak: 0.0 dB  |  Vol: "
+										++ q.amp[1].ampdb.round(0.1).asString
+										++" dB"
+									);
+								"Buffer B loaded".postln;}.defer});
+						},{
+							SCAlert("Sorry, that doesn't seem to be a soundfile.", ["Ok"])
+					})
+				},{
+				Ê Ê "cancelled".postln;
+				},
+				false
+			)})),
+];
 
 layout.nextLine;
 
@@ -112,8 +173,8 @@ c.addFlowLayout;
 2.do{|i|
 	~chooseSnd[i]= Button(c, 120@40)
 		.states_([
-			[i+1, Color.black, Color.white],
-			[i+1, Color.white, Color.black],
+			[(i+65).asAscii.asString, Color.black, Color.white],
+			[(i+65).asAscii.asString, Color.white, Color.black],
 		])
 		.action_({|me|
 			if (me.value == 1, {
@@ -125,16 +186,21 @@ c.addFlowLayout;
 		})
 		.value_(if (i == q.currentFile, {1}, {0}));
 
-	~sndLabel[i]= StaticText(c, 215@40)
+	if (q.buffers[i].notNil, {x= q.buffers[i].path.basename.postln}, {x= "no file loaded".postln});
+
+	~sndLabel[i]= StaticText(c, 225@40)
 		.string_(" file name: "
-			++ q.buffers[i].path.basename
+			++ x
+//			++ q.buffers[i].path.basename
 			++ "\n Peak: 0.0 dB  |  Vol: "
 			++ q.amp[i].ampdb.round(0.1).asString
 			++" dB"
 		)
 		.background_(Color.white);
 
-	~sndVol= Knob(c, 30@30)
+	c.decorator.shift(7, 0);
+	
+	~sndVol= Knob(c, 40@40)
 		.action_({|me|
 			q.amp[i]= me.value;
 			~sndLabel[i].string_(" file name: "
@@ -158,9 +224,12 @@ layout.nextLine;
 	])
 	.action_({|me|
 	})
-	.value_(0);
+	.value_(0)
+	.enabled_(false);
 )
+
 /**************************************************************************************************/
+
 (
 // clean up
 q.buffers.do{|i| i.free}
