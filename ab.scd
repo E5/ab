@@ -8,19 +8,21 @@ SynthDef(\ab_PlayBuf, {| out=0, bufnum=0, rate=1, trigger=0, startPos=0, loop=0,
 
 q= ();
 
-q.buffers= [nil, nil];
-//q.buffers= [
-//	Buffer.read(s,
-////		"/Volumes/Bombe/\ SC/A-B\ simpler/audio/Two_Face.aif",
-//		Document.current.dir ++ "/audio/Two_Face.aif",
-//		action: {"Buffer A loaded".postln;}
-//	),
-//	Buffer.read(s,
-////		"/Volumes/Bombe/\ SC/A-B\ simpler/audio/Two_Face_Flt.aif",
-//		Document.current.dir ++ "/audio/Two_Face_Flt.aif",
-//		action: {"Buffer B loaded".postln;}
-//	),
-//];
+// q.buffers= [nil, nil];
+q.buffers= [
+	Buffer.read(s,
+//		"/Volumes/Bombe/\ SC/A-B\ simpler/audio/Two_Face.aif",
+		// Document.current.dir ++ "/audio/Two_Face.aif",
+		thisProcess.nowExecutingPath.dirname ++ "/audio/Two_Face.aif",
+		action: {"Buffer A loaded".postln;}
+	),
+	Buffer.read(s,
+//		"/Volumes/Bombe/\ SC/A-B\ simpler/audio/Two_Face_Flt.aif",
+		thisProcess.nowExecutingPath.dirname ++ "/audio/Two_Face_Flt.aif",
+		// Document.current.dir ++ "/audio/Two_Face_Flt.aif",
+		action: {"Buffer B loaded".postln;}
+	),
+];
 )
 
 //s.boot;
