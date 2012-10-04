@@ -82,7 +82,7 @@ layout= w.addFlowLayout;
 				~task.start;
 				~player= [
 					Synth(\ab_PlayBuf, [
-						\bufnum, q.buffers[0], 
+						\bufnum, q.buffers[0],
 						\amp, ~chooseSnd[0].value * q.amp[0]
 					]),
 					Synth(\ab_PlayBuf, [
@@ -113,7 +113,7 @@ c.addFlowLayout(0@0, 0@0);
 		.states_([ ["load a", Color.black, Color.white], ])
 		.action_({|me|
 			Dialog.openPanel({|path|
-				Ê Ê path.postln;
+					path.postln;
 					if (path.isSoundFile, {
 						q.buffers[0]= Buffer.read(s,
 							path,
@@ -130,7 +130,7 @@ c.addFlowLayout(0@0, 0@0);
 							SCAlert("Sorry, that doesn't seem to be a soundfile.", ["Ok"])
 						})
 				},{
-				Ê Ê "cancelled".postln;
+					"cancelled".postln;
 				},
 				false
 			)})),
@@ -138,7 +138,7 @@ c.addFlowLayout(0@0, 0@0);
 		.states_([ ["load b", Color.black, Color.white], ])
 		.action_({|me|
 			Dialog.openPanel({|path|
-				Ê Ê path.postln;
+					path.postln;
 					if (path.isSoundFile, {
 						q.buffers[1]= Buffer.read(s,
 							path,
@@ -154,7 +154,7 @@ c.addFlowLayout(0@0, 0@0);
 							SCAlert("Sorry, that doesn't seem to be a soundfile.", ["Ok"])
 					})
 				},{
-				Ê Ê "cancelled".postln;
+					"cancelled".postln;
 				},
 				false
 			)})),
@@ -199,7 +199,7 @@ c.addFlowLayout;
 		.background_(Color.white);
 
 	c.decorator.shift(7, 0);
-	
+
 	~sndVol= Knob(c, 40@40)
 		.action_({|me|
 			q.amp[i]= me.value;
