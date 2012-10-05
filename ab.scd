@@ -34,6 +34,8 @@ var layout;
 q.currentFile= 0;
 q.playing= false;
 q.amp= [-6, -6].dbamp;
+q.currentFrame= 0;
+q.spec= [0, q.buffers[0].numFrames, \lin,].asSpec;
 
 GUI.qt;
 //GUI.cocoa;
@@ -41,8 +43,8 @@ GUI.qt;
 w = Window.new("A-B", Rect(520, 241, 420, 400)).front;
 w.onClose= {
 	// free buffers
-	q.buffers.do{|i| i.free};
-	q.buffers= [nil, nil];
+	// q.buffers.do{|i| i.free};
+	// q.buffers= [nil, nil];
 };
 
 layout= w.addFlowLayout;
@@ -50,18 +52,46 @@ layout= w.addFlowLayout;
 ~task= Task({
 	var startTime;
 	startTime= Main.elapsedTime;
-	inf.do{
-		var string;
+	inf.do{| i |
+		var string, spec;
+		q.currentFrame= ((i/100) * (q.buffers[0].sampleRate));
 		string= (Main.elapsedTime - startTime).asTimeString;
 		string= string[0..10];
-		{~playPosTxt.string_(string)}.defer;
-		0.01.wait
+		{
+			~playPoSld.value_(q.spec.unmap(q.currentFrame));
+			~playPosTxt.string_(string);
+		}.defer;
+		// {~playPosTxt.string_(string)}.defer;
+		// spec.unmap(q.currentFrame).postln;
+		// {~playPoSld.value_(spec.unmap(q.currentFrame))}.defer;
+		0.01.wait;
 	};
 });
 
 ~playPoSld= Slider(w, 412@20)
-	.action_({
+.action_({|me|
+	q.currentFrame= q.spec.map(me.value);
+	if (q.playing, {
+		~task.pause;
+		~player.do{|player| player.free};
+		q.playing= false;
 	});
+	~task.start;
+	~player= [
+		Synth(\ab_PlayBuf, [
+			\bufnum, q.buffers[0],
+			\amp, ~chooseSnd[0].value * q.amp[0],
+			\startPos, q.currentFrame
+		]),
+		Synth(\ab_PlayBuf, [
+			\bufnum, q.buffers[1],
+			\amp, ~chooseSnd[1].value * q.amp[1],
+			\startPos, q.currentFrame
+
+		]),
+	];
+	q.playing= true;
+});
 
 ~playPosTxt= StaticText(w, 124@40)
 	.string_(0.asTimeString[0..10])
@@ -71,31 +101,39 @@ layout= w.addFlowLayout;
 	.align_(\center);
 
 ~play= Button(w, 111@40)
-	.states_([
-		["play", Color.black, Color.white],
-		["stop", Color.black, Color.white],
-	])
-	.action_({|me|
-		if (me.value == 0, {
-				~task.pause;
-				~player.do{|player| player.free};
-				q.playing= false;
-			},{
-				~task.start;
-				~player= [
-					Synth(\ab_PlayBuf, [
-						\bufnum, q.buffers[0],
-						\amp, ~chooseSnd[0].value * q.amp[0]
+ .states_([
+ 	["play", Color.black, Color.white],
+ 	["stop", Color.black, Color.white],
+ ])
+.action_({|me|
+	if (me.value == 0, {
+		~task.pause;
+		~player.do{|player| player.free};
+		q.playing= false;
+		q.currentFrame= 0;
+		{
+			~playPoSld.value_(q.spec.unmap(q.currentFrame));
+			~playPosTxt.string_(0.asTimeString[0..10]);
+			}.defer;
+		},{
+			~task.start;
+			~player= [
+				Synth(\ab_PlayBuf, [
+					\bufnum, q.buffers[0],
+					\amp, ~chooseSnd[0].value * q.amp[0],
+					\startPos, q.currentFrame
 					]),
-					Synth(\ab_PlayBuf, [
-						\bufnum, q.buffers[1],
-						\amp, ~chooseSnd[1].value * q.amp[1]
+				Synth(\ab_PlayBuf, [
+					\bufnum, q.buffers[1],
+					\amp, ~chooseSnd[1].value * q.amp[1],
+					\startPos, q.currentFrame
+
 					]),
 				];
-				q.playing= true;
-		})
+			q.playing= true;
+			})
 	})
-	.value_(0);
+.value_(0);
 
 ~stop= Button(w, 111@40)
 	.states_([
@@ -244,4 +282,7 @@ q.buffers.do{|i| i.free}
 //~task.resume;
 //~task.reset;
 //~task.stop;
+0.09*44100
 
+q.buffers[0].numFrames.reciprocal
+/q.buffers[0].sampleRate
