@@ -4,10 +4,19 @@
 s.boot; // start server
 
 // synth
-SynthDef(\ab_PlayBuf, {| out=0, bufnum=0, rate=1, trigger=0, startPos=0, loop=0, amp=1 |
-	Out.ar(out,
-		PlayBuf.ar(2, bufnum, rate, trigger, startPos, loop, doneAction: 2) * amp;
-	)
+SynthDef(\ab_Player_s, {| out=0, bufnum=0, rate=1, trigger=0, startPos=0, amp=1, resetPos=0 |
+	var signal;
+	signal= BufRd.ar(2, bufnum, Phasor.ar(trigger, rate, startPos, BufFrames.kr(bufnum), resetPos));
+	DetectSilence.ar(signal, doneAction: 2);
+ 	Out.ar(out, signal * amp)
+}).add;
+
+SynthDef(\ab_Player_m, {| out=0, bufnum=0, rate=1, trigger=0, startPos=0, amp=1, resetPos=0 |
+	var signal;
+	signal= BufRd.ar(1, bufnum, Phasor.ar(trigger, rate, startPos, BufFrames.kr(bufnum), resetPos));
+	signal= signal.dup;
+	DetectSilence.ar(signal, doneAction: 2);
+ 	Out.ar(out, signal * amp)
 }).add;
 )
 
@@ -63,6 +72,7 @@ layout= w.addFlowLayout;
 		string= (Main.elapsedTime - startTime).asTimeString;
 		string= string[0..10];
 		{
+			// update gui
 			~playPoSld.value_(q.spec.unmap(q.currentFrame));
 			~playPosTxt.string_(string);
 		}.defer;
@@ -80,12 +90,12 @@ layout= w.addFlowLayout;
 	});
 	~task.start;
 	~player= [
-		Synth(\ab_PlayBuf, [
+		Synth(\ab_Player_s, [
 			\bufnum, q.buffers[0],
 			\amp, ~chooseSnd[0].value * q.amp[0],
 			\startPos, q.currentFrame
 		]),
-		Synth(\ab_PlayBuf, [
+		Synth(\ab_Player_s, [
 			\bufnum, q.buffers[1],
 			\amp, ~chooseSnd[1].value * q.amp[1],
 			\startPos, q.currentFrame
@@ -120,12 +130,12 @@ layout= w.addFlowLayout;
 		},{
 			~task.start;
 			~player= [
-				Synth(\ab_PlayBuf, [
+				Synth(\ab_Player_s, [
 					\bufnum, q.buffers[0],
 					\amp, ~chooseSnd[0].value * q.amp[0],
 					\startPos, q.currentFrame
 				]),
-				Synth(\ab_PlayBuf, [
+				Synth(\ab_Player_s, [
 					\bufnum, q.buffers[1],
 					\amp, ~chooseSnd[1].value * q.amp[1],
 					\startPos, q.currentFrame
@@ -285,3 +295,4 @@ q.buffers.do{|i| i.free}
 
 q.buffers[0].numFrames.reciprocal
 q.buffers[0].sampleRate*/
+1.dup
